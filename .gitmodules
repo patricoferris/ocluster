@@ -1,3 +1,4 @@
 [submodule "obuilder"]
 	path = obuilder
-	url = https://github.com/ocurrent/obuilder.git
+	branch = github-workflows
+	url = https://github.com/patricoferris/obuilder.git
