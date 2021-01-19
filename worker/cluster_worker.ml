@@ -67,6 +67,7 @@ type t = {
   prune_threshold : float option;      (* docker-prune when free space is lower than this (percentage) *)
   registration_service : Cluster_api.Raw.Client.Registration.t Sturdy_ref.t;
   capacity : int;
+  no_docker : bool;                    (* Whether or not docker-related things should be done *)
   mutable in_use : int;                (* Number of active builds *)
   cond : unit Lwt_condition.t;         (* Fires when a build finishes (or switch turned off) *)
   mutable cancel : unit -> unit;       (* Called if switch is turned off *)
@@ -156,9 +157,10 @@ let build ~switch ~log t descr =
     Error (`Msg "Build failed"), "fail"
 
 let check_docker_partition t =
-  match t.prune_threshold with
-  | None -> Lwt_result.return ()
-  | Some prune_threshold ->
+  match t.prune_threshold, t.no_docker with
+  | _, true -> Lwt_result.return ()
+  | None, false -> Lwt_result.return ()
+  | Some prune_threshold, false ->
     Df.free_space_percent "/var/lib/docker" >|= fun free ->
     Log.info (fun f -> f "Docker partition: %.0f%% free" free);
     if free < prune_threshold then Error `Disk_space_low
@@ -378,7 +380,7 @@ let self_update ~update t =
        Lwt_result.fail (`Msg (Printexc.to_string ex))
     )
 
-let run ?switch ?build ?(allow_push=[]) ?prune_threshold ?obuilder ~update ~capacity ~name ~state_dir registration_service =
+let run ?switch ?build ?(allow_push=[]) ?(no_docker=false) ?prune_threshold ?obuilder ~update ~capacity ~name ~state_dir registration_service =
   begin match prune_threshold with
     | None -> Log.info (fun f -> f "Prune threshold not set. Will not check for low disk-space!")
     | Some frac when frac < 0.0 || frac > 100.0 -> Fmt.invalid_arg "prune_threshold must be in the range 0 to 100"
@@ -402,6 +404,7 @@ let run ?switch ?build ?(allow_push=[]) ?prune_threshold ?obuilder ~update ~capa
     cond = Lwt_condition.create ();
     capacity;
     in_use = 0;
+    no_docker;
     cancel = ignore;
     allow_push;
   } in

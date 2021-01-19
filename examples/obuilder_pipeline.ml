@@ -11,7 +11,7 @@ let timeout = Duration.of_min 60
 
 let example_spec =
   let open Obuilder_spec in
-  stage ~from:"busybox" [
+  stage ~from:("docker", "busybox") [
     copy ["."] ~dst:"/src";
     shell ["sh"; "-c"];
     run "ls -l /src"

@@ -40,7 +40,7 @@ let update_docker () =
 let update_normal () =
   Lwt.return (fun () -> Lwt.return ())
 
-let main registration_path capacity name allow_push prune_threshold state_dir obuilder =
+let main registration_path capacity name allow_push no_docker prune_threshold state_dir obuilder =
   let update =
     if Sys.file_exists "/.dockerenv" then update_docker
     else update_normal
@@ -48,7 +48,7 @@ let main registration_path capacity name allow_push prune_threshold state_dir ob
   Lwt_main.run begin
     let vat = Capnp_rpc_unix.client_only_vat () in
     let sr = Capnp_rpc_unix.Cap_file.load vat registration_path |> or_die in
-    Cluster_worker.run ~capacity ~name ~allow_push ?prune_threshold ?obuilder ~state_dir ~update sr
+    Cluster_worker.run ~capacity ~name ~allow_push ~no_docker ?prune_threshold ?obuilder ~state_dir ~update sr
   end
 
 (* Command-line parsing *)
@@ -95,6 +95,14 @@ let allow_push =
     ~docv:"REPO"
     ["allow-push"]
 
+let no_docker =
+  Arg.value @@
+  Arg.opt Arg.bool false @@
+  Arg.info
+    ~doc:"A flag to disable docker-related things"
+    ~docv:"NO_DOCKER"
+    ["no-docker"]
+
 let state_dir =
   Arg.required @@
   Arg.opt Arg.(some string) None @@
@@ -110,29 +118,22 @@ module Obuilder_config = struct
     Arg.value @@
     Arg.opt Arg.(some store_t) None @@
     Arg.info
-      ~doc:"zfs:pool or btrfs:/path for the OBuilder cache"
+      ~doc:"zfs:prefix/pool or btrfs:/path for the OBuilder cache -- zfs prefix is optional"
       ~docv:"STORE"
       ["obuilder-store"]
 
-  let fast_sync =
-    Arg.value @@
-    Arg.flag @@
-    Arg.info
-      ~doc:"Ignore sync syscalls for OBuilder builds (requires runc >= 1.0.0-rc92)"
-      ["fast-sync"]
-
   let v =
-    let make fast_sync = function
+    let make config = function
       | None -> None
-      | Some store -> Some (Cluster_worker.Obuilder_config.v ~fast_sync store)
+      | Some store -> Some (Cluster_worker.Obuilder_config.v config store)
     in
     let open Cmdliner.Term in
-    Term.pure make $ fast_sync $ store
+    Term.pure make $ Obuilder.Sandbox.cmdliner $ store
 end
 
 let cmd =
   let doc = "Run a build worker" in
-  Term.(const main $ connect_addr $ capacity $ worker_name $ allow_push $ prune_threshold $ state_dir $ Obuilder_config.v),
+  Term.(const main $ connect_addr $ capacity $ worker_name $ allow_push $ no_docker $ prune_threshold $ state_dir $ Obuilder_config.v),
   Term.info "ocluster-worker" ~doc ~version:Version.t
 
 let () = Term.(exit @@ eval cmd)

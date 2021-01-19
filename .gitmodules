@@ -1,3 +1,4 @@
 [submodule "obuilder"]
 	path = obuilder
-	url = https://github.com/ocurrent/obuilder.git
+	url = https://github.com/patricoferris/obuilder.git
+	branch = macos

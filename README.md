@@ -93,6 +93,18 @@ The service builds the jobs using `docker build` and so needs access to the loca
 [Dockerfile.worker](./Dockerfile.worker) can be used to run the worker service itself in a Docker container.
 However, if you intend to support OBuilder jobs, you will probably want to run it directly on the host instead.
 
+To this end, if you wish to initialise a new worker with OBuilder capabilities you must also provide a configuration 
+for OBuilder on the command-line. For example: 
+
+```
+dune exec -- ocluster-worker ./capnp-secrets/pool-linux-x86_64.cap \
+  --state-dir=/var/lib/ocluster-worker \
+  --name=my-host --capacity=1 --prune-threshold=20 \ 
+  --fast-sync=false --obuilder-store=zfs:tank
+```
+
+By completing all of the requirements for a [runc](https://github.com/ocurrent/obuilder) configuration, the builder will be ready to except OBuilder jobs. The environment you build on dictates the sandboxing environment that is available through OBuilder.
+
 ## Clients
 
 To submit a job, you need:

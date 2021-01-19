@@ -5,8 +5,10 @@ type job_spec = [
 
 module Obuilder_config : sig
   type t
+  
+  module Sandbox : Obuilder.S.SANDBOX
 
-  val v : fast_sync:bool -> [ `Zfs of string | `Btrfs of string ] -> t
+  val v : Obuilder_build.Sandbox.config -> [ `Zfs of string option * string | `Btrfs of string ] -> t
 end
 
 val run :
@@ -17,6 +19,7 @@ val run :
           job_spec ->
           (string, [`Cancelled | `Msg of string]) Lwt_result.t) ->
   ?allow_push:string list ->
+  ?no_docker:bool -> 
   ?prune_threshold:float ->
   ?obuilder:Obuilder_config.t ->
   update:(unit -> (unit -> unit Lwt.t) Lwt.t) ->
@@ -30,6 +33,7 @@ val run :
     @param switch Turning this off causes the builder to exit (for unit-tests)
     @param build Used to override the default build action (for unit-tests)
     @param allow_push Docker repositories to which results can be pushed
+    @param no_docker Disables some docker-related checks
     @param update Function to run on "selfUpdate" requests. It should do any preparation (such as downloading new images),
                   then return a function to do the actual update. This is so that the first part can run while the node
                   finishes its remaining jobs. The second part is called once all jobs are finished.

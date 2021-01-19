@@ -1,9 +1,13 @@
 type t
 
+module Sandbox = Obuilder.Sandbox
+
 module Config : sig
   type t
+  
+  val v : Sandbox.config -> [ `Zfs of string option * string | `Btrfs of string ] -> t
 
-  val v : fast_sync:bool -> [ `Zfs of string | `Btrfs of string ] -> t
+  module Sandbox : Obuilder.S.SANDBOX
 end
 
 val create : ?prune_threshold:float -> Config.t -> t Lwt.t
