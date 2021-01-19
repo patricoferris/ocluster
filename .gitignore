@@ -2,3 +2,4 @@
 _build
 capnp-secrets
 var
+.vscode
