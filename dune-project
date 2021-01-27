@@ -1,28 +1,29 @@
 (lang dune 2.5)
 (name ocluster)
 (formatting disabled)
-
 (generate_opam_files true)
-
 (source (github ocurrent/ocluster))
 (authors "talex5@gmail.com")
 (maintainers "talex5@gmail.com")
-
 (package
  (name ocluster-api)
  (synopsis "Cap'n Proto API for OCluster")
  (depends
+  (ppx_deriving (>= 5.1))
   lwt
   (capnp-rpc-lwt (>= 0.8.0))
   fmt
   ppx_deriving_yojson
-  (ocaml (>= 4.10.0))
-))
-
+  (ocaml (>= 4.10.0))))
 (package
  (name ocluster)
  (synopsis "Distribute build jobs to workers")
  (depends
+  (prometheus (>= 1.0))
+  (ppx_sexp_conv (>= v0.14.1))
+  (extunix (>= 0.1.6))
+  (capnp-rpc-net (>= 0.9.0))
+  (capnp-rpc-lwt (>= 0.9.0))
   dune-build-info
   (ocluster-api (= :version))
   lwt
@@ -42,13 +43,12 @@
   (ocaml (>= 4.10.0))
   (current_ocluster (and (= :version) :with-test))
   (alcotest (and (>= 1.0.0) :with-test))
-  (alcotest-lwt (and (>= 1.0.1) :with-test))
-))
-
+  (alcotest-lwt (and (>= 1.0.1) :with-test))))
 (package
  (name current_ocluster)
  (synopsis "OCurrent plugin for OCluster builds")
  (depends
+  (ppx_deriving (>= 5.1))
   (ocluster-api (= :version))
   lwt
   (current (>= 0.3))
@@ -59,5 +59,4 @@
   fmt
   prometheus
   ppx_deriving_yojson
-  (ocaml (>= 4.10.0))
-))
+  (ocaml (>= 4.10.0))))

@@ -7,6 +7,11 @@ homepage: "https://github.com/ocurrent/ocluster"
 bug-reports: "https://github.com/ocurrent/ocluster/issues"
 depends: [
   "dune" {>= "2.5"}
+  "prometheus" {>= "1.0"}
+  "ppx_sexp_conv" {>= "v0.14.1"}
+  "extunix" {>= "0.1.6"}
+  "capnp-rpc-net" {>= "0.9.0"}
+  "capnp-rpc-lwt" {>= "0.9.0"}
   "dune-build-info"
   "ocluster-api" {= version}
   "lwt"
