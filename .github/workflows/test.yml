@@ -1,0 +1,23 @@
+name: Tests for ocluster, ocluster-api and current_ocluster
+on: [push, pull_request]
+jobs:
+  test:
+    strategy:
+      matrix:
+        operating-system: [macos-latest]
+        ocaml-version: [4.11.1]
+    runs-on: ${{ matrix.operating-system }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: avsm/setup-ocaml@v1
+      with:
+        ocaml-version: ${{ matrix.ocaml-version }}
+    - name: Pinning Package
+      run: opam pin add -yn ocluster.dev './' && opam pin add -yn ocluster-api.dev
+        './' && opam pin add -yn current_ocluster.dev './'
+    - name: Packages
+      run: opam depext -yt ocluster.dev ocluster-api.dev current_ocluster.dev
+    - name: Dependencies
+      run: opam install -t -y . --deps-only
+    - name: Building, Installing and Testing
+      run: opam exec -- dune build @install @runtest
