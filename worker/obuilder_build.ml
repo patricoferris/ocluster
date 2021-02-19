@@ -48,7 +48,8 @@ let do_prune ~path ~prune_threshold t =
     let stop = Unix.gettimeofday () -. prune_margin |> Unix.gmtime in
     let limit = 100 in
     Builder.prune builder ~before:stop limit >>= fun n ->
-    Df.free_space_percent path >>= fun free ->
+    let free_space = match t.config.store_spec with `Zfs (_, pool) -> fun _ -> Df.zfs_free_space pool | _ -> Df.free_space_percent in 
+    free_space path >>= fun free ->
     Log.info (fun f -> f "OBuilder partition: %.0f%% free after pruning %d items" free n);
     if free > prune_threshold then Lwt.return_unit      (* Space problem is fixed! *)
     else if n < limit then (
@@ -77,7 +78,8 @@ let check_free_space t =
   | Some prune_threshold ->
     let path = store_path t in
     let rec aux () =
-      Df.free_space_percent path >>= fun free ->
+      let free_space = match t.config.store_spec with `Zfs (_, pool) -> fun _ -> Df.zfs_free_space pool | _ -> Df.free_space_percent in 
+      free_space path >>= fun free ->
       Log.info (fun f -> f "OBuilder partition: %.0f%% free" free);
       (* If we're low on space, spawn a pruning thread. *)
       if free < prune_threshold && t.pruning = false then (

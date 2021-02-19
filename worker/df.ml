@@ -1,15 +1,4 @@
-let free_space_percent path = 
-  let float = Int64.to_float in 
-  let s = ExtUnix.All.statvfs path in 
-  let total = float s.f_blocks in
-  let available = float s.f_bavail in
-  (* let roots = float s.f_bfree in
-  let used = total -. roots in
-  let non_root = used +. available in *)
-  let free = 100. *. (total /. available) in
-  Log.info (fun f -> f "Free Space: %f\n" free);
-    Lwt.return free
-(* open Lwt.Infix
+open Lwt.Infix
 
 let free_space_percent path =
   Lwt_process.pread ("", [| "df"; path; "--output=pcent" |]) >|= fun lines ->
@@ -21,4 +10,11 @@ let free_space_percent path =
     in
     100. -. used
   | _ ->
-    Fmt.failwith "Expected two lines from df, but got:@,%S" lines *)
+    Fmt.failwith "Expected two lines from df, but got:@,%S" lines
+
+(* Df doesn't seem to report accurate measures for ZFS
+   https://pavelanni.github.io/oracle_solaris_11_labs/zfs/zfs_free/ *)
+let zfs_free_space pool = 
+  Lwt_process.pread ("", [| "zpool"; "list"; "-H"; "-o"; "cap"; pool|]) >|= fun used ->  
+  try 100. -. Scanf.sscanf used " %f%%" Fun.id
+  with _ -> Fmt.failwith "Expected %S, got %S" "xx%" used
